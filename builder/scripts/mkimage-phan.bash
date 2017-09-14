@@ -27,19 +27,20 @@ build() {
     apk --no-cache add php7 php7-json php7-sqlite3 php7-mbstring git build-base autoconf curl php7-dev php7-openssl php7-phar php7-dom
   } >&2
 
-
-  # install composer
-  {
-    cd /tmp
-    curl -O https://getcomposer.org/download/1.0.0-alpha11/composer.phar
-    printf "47347f16d366145eafb45d2e800012dc80cb8fc08d1d299849825c51465381ac  composer.phar" | shasum -a 256 -c
-    mv composer.phar /usr/local/bin
-  } >&2
-
   # install runtime dependencies into rootfs
   {
     apk --no-cache --root "$rootfs" --keys-dir /etc/apk/keys add --initdb php7 php7-json php7-sqlite3 php7-mbstring php7-pcntl php7-dom tini
     cp /docker-entrypoint.sh "$rootfs"/docker-entrypoint.sh
+  } >&2
+
+  # install composer
+  {
+    cd /tmp
+    php7 -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    php7 -r "if (hash_file('SHA384', 'composer-setup.php') === '544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+    php7 composer-setup.php
+    php7 -r "unlink('composer-setup.php');"
+    mv composer.phar /usr/local/bin
   } >&2
 
   # install phan
@@ -60,7 +61,7 @@ build() {
   # install php-ast
   {
     cd /tmp
-    git clone -b "v0.1.1" --single-branch --depth 1 https://github.com/nikic/php-ast.git
+    git clone -b "v0.1.5" --single-branch --depth 1 https://github.com/nikic/php-ast.git
     cd php-ast
     phpize7
     ./configure --with-php-config=php-config7
