@@ -7,6 +7,6 @@ script:
 after_success:
   - ./build test versions/edge/options
 deploy:  
-  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
-  - ./build push versions/edge/options
+  provider: script
+  script: docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" && ./build push versions/edge/options
   
